@@ -7,7 +7,10 @@ import os
 import urllib.request
 import pandas as pd
 
-from utils import get_logger
+try:
+    from src.utils import get_logger
+except ImportError:
+    from utils import get_logger
 
 logger = get_logger(__name__)
 

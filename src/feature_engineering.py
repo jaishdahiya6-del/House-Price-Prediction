@@ -2,7 +2,10 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from utils import get_logger
+try:
+    from src.utils import get_logger
+except ImportError:
+    from utils import get_logger
 
 logger = get_logger(__name__)
 
