@@ -1,6 +1,8 @@
-"""Utility helpers: logging setup and generic save/load functions."""
+"""Utility helpers: logging setup, seed setting, and generic save/load functions."""
 import logging
 import os
+import random
+import numpy as np
 import joblib
 
 
@@ -14,6 +16,13 @@ def get_logger(name: str) -> logging.Logger:
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
     return logger
+
+
+def set_seed(seed: int = 42) -> None:
+    """Set random seeds for reproducibility across random and numpy."""
+    random.seed(seed)
+    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
 
 
 def save_object(obj, path: str) -> None:

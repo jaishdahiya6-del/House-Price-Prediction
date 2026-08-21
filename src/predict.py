@@ -4,7 +4,10 @@ import sys
 import pandas as pd
 
 sys.path.append(os.path.dirname(__file__))
-from utils import get_logger, load_object
+try:
+    from src.utils import get_logger, load_object
+except ImportError:
+    from utils import get_logger, load_object
 
 logger = get_logger(__name__)
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "models")

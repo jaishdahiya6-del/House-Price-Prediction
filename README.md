@@ -1,120 +1,178 @@
-# 🏠 AI House Price Prediction System
+# 🏠 Production AI House Price Prediction System
 
-Predicts California house prices from real 1990 census data using a compact,
-production-style ML pipeline: modular Python source, model comparison, a
-saved best model, and an interactive Streamlit dashboard.
+A comprehensive, production-grade Machine Learning system for predicting California housing prices based on 1990 U.S. Census data. Built with a clean modular architecture, Optuna hyperparameter optimization, unit test coverage, and an interactive Streamlit web dashboard.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![scikit--learn](https://img.shields.io/badge/scikit--learn-1.3%2B-orange)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3%2B-orange)
 ![XGBoost](https://img.shields.io/badge/XGBoost-2.0%2B-green)
+![LightGBM](https://img.shields.io/badge/LightGBM-4.0%2B-brightgreen)
+![Optuna](https://img.shields.io/badge/Optuna-3.0%2B-blueviolet)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.30%2B-red)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
 ---
 
-## Overview
+## 📌 Executive Summary
 
-This project trains and compares several regression models on the
-**California Housing dataset** (20,640 real records, 1990 U.S. census) and
-serves the best one through a Streamlit web app. It's intentionally scoped
-to be something you could actually run end-to-end in minutes, not a wall of
-unused boilerplate.
+This repository delivers an end-to-end regression system capable of estimating median house values in California block groups. It includes missing value imputation, IQR winsorizing for outlier treatment, ratio feature engineering, one-hot categorical encoding, standardization, multi-model candidate evaluation (Linear, Ridge, Lasso, Random Forest, Gradient Boosting, XGBoost, LightGBM), Optuna cross-validation tuning, automated model selection, and an interactive web app.
 
-**Live results from the last training run:**
+### 🏆 Live Model Leaderboard Results
 
-| Model | MAE | RMSE | R² | Adjusted R² | MAPE (%) | CV R² (5-fold) |
-|---|---|---|---|---|---|---|
-| **XGBoost (best)** | **$29,801** | **$45,814** | **0.840** | 0.839 | 16.96 | 0.839 |
-| GradientBoosting | $33,842 | $50,579 | 0.805 | 0.804 | 19.36 | 0.824 |
-| RandomForest | $33,191 | $51,132 | 0.801 | 0.800 | 18.70 | 0.806 |
-| Ridge | $51,681 | $73,039 | 0.593 | 0.591 | 30.88 | 0.676 |
-| LinearRegression | $51,682 | $73,039 | 0.593 | 0.591 | 30.89 | 0.676 |
-| Lasso | $51,682 | $73,039 | 0.593 | 0.591 | 30.89 | 0.676 |
+| Model | MAE ($) | RMSE ($) | R² | Adjusted R² | MAPE (%) | 5-Fold CV R² |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **XGBoost (Best)** | **$31,833.84** | **$48,142.61** | **0.8231** | **0.8224** | **18.13%** | **0.8269** |
+| LightGBM | $33,255.60 | $49,254.58 | 0.8149 | 0.8141 | 18.97% | 0.8187 |
+| GradientBoosting | $35,368.08 | $52,163.50 | 0.7924 | 0.7915 | 20.12% | 0.8079 |
+| RandomForest | $36,234.83 | $54,565.24 | 0.7728 | 0.7719 | 20.54% | 0.7853 |
+| Ridge | $51,680.56 | $73,038.71 | 0.5929 | 0.5913 | 30.88% | 0.6762 |
+| LinearRegression | $51,682.21 | $73,039.25 | 0.5929 | 0.5913 | 30.89% | 0.6762 |
+| Lasso | $51,682.21 | $73,039.26 | 0.5929 | 0.5913 | 30.89% | 0.6762 |
 
-XGBoost was selected automatically (lowest RMSE) and saved to `models/best_model.pkl`.
+*The best model (XGBoost) is automatically serialized to `models/best_model.pkl` along with preprocessor scalers and feature mappings.*
 
-## Features
+---
 
-- Real dataset (20,640 rows), pulled automatically — no manual download
-- Missing-value handling, IQR-based outlier capping, one-hot encoding
-- Engineered ratio features (rooms/household, bedrooms/room, population/household)
-- 6 models trained and compared with 5-fold cross-validation
-- MAE / MSE / RMSE / R² / Adjusted R² / MAPE leaderboard
-- Best model auto-selected and serialized with Joblib
-- Correlation heatmap, feature importance, actual-vs-predicted, and residual charts
-- Interactive Streamlit dashboard with sliders, live prediction, prediction history, and CSV export
-
-## Project Structure
+## 📁 Repository Structure
 
 ```
 House-Price-Prediction/
-├── data/
-│   ├── raw/                  # cached source CSV (auto-downloaded)
-│   └── processed/
-├── src/
-│   ├── data_loader.py        # fetches & caches the dataset
-│   ├── preprocessing.py      # missing values, outliers, train/test split
-│   ├── feature_engineering.py# derived features, encoding, scaling
-│   ├── train.py               # trains all models, builds leaderboard, saves best model
-│   ├── predict.py             # loads saved model and predicts on new input
-│   ├── evaluate.py            # MAE/MSE/RMSE/R2/Adjusted R2/MAPE
-│   └── utils.py               # logging + save/load helpers
 ├── app/
-│   └── streamlit_app.py       # interactive dashboard
-├── models/                    # best_model.pkl, scaler.pkl, feature_columns.pkl
-├── images/                    # generated charts
+│   └── streamlit_app.py        # Interactive Streamlit web application
+├── data/
+│   ├── raw/                   # Auto-downloaded raw California Housing CSV
+│   └── processed/             # Cleaned & preprocessed datasets
+├── images/                    # Generated charts & visualization outputs
+│   ├── actual_vs_predicted.png
+│   ├── correlation_heatmap.png
+│   ├── feature_distributions.png
+│   ├── feature_importance.png
+│   ├── geographical_distribution.png
+│   └── residual_distribution.png
+├── models/                    # Serialized best model, scaler, and column order
+├── notebooks/
+│   ├── EDA.ipynb               # Exploratory Data Analysis notebook
+│   ├── Feature_Engineering.ipynb # Feature engineering & preprocessing exploration
+│   └── Model_Training.ipynb    # Model training, Optuna tuning, and evaluation
 ├── reports/
-│   └── leaderboard.csv
-├── requirements.txt
+│   └── leaderboard.csv         # Exported model comparison leaderboard
+├── src/
+│   ├── data_loader.py          # Data ingestion and local caching
+│   ├── preprocessing.py        # Missing value imputation, capping, train/test split
+│   ├── feature_engineering.py  # Derived features, encoding, feature scaling
+│   ├── evaluate.py             # Evaluation metrics (MAE, MSE, RMSE, R2, MAPE)
+│   ├── train.py                # Hyperparameter tuning, CV, training, chart generation
+│   ├── predict.py              # Single/batch prediction interface
+│   └── utils.py                # Logger, seed setting, joblib object persistence
+├── tests/                     # Unit test suite with Pytest
+│   ├── test_data_loader.py
+│   ├── test_evaluate.py
+│   ├── test_feature_engineering.py
+│   ├── test_predict.py
+│   ├── test_preprocessing.py
+│   └── test_utils.py
+├── .gitignore
 ├── LICENSE
-└── .gitignore
+├── README.md
+└── requirements.txt
 ```
 
-## Installation
+---
 
+## 📊 Dataset Description
+
+The dataset consists of **20,640 records** from the 1990 California U.S. Census ([Pace & Barry, 1997](https://www.dcc.fc.up.pt/~ltorgo/Regression/cal_housing.html)). Each record represents a block group:
+
+- `longitude` & `latitude`: Geographical location coordinates.
+- `housing_median_age`: Median age of houses in block.
+- `total_rooms` & `total_bedrooms`: Aggregate count of rooms/bedrooms.
+- `population`: Total population in block group.
+- `households`: Total number of households.
+- `median_income`: Median income in tens of thousands of USD.
+- `ocean_proximity`: Categorical location relative to ocean (`<1H OCEAN`, `INLAND`, `NEAR OCEAN`, `NEAR BAY`, `ISLAND`).
+- **Target**: `median_house_value` in USD.
+
+### Engineered Features
+- `rooms_per_household` = `total_rooms` / `households`
+- `bedrooms_per_room` = `total_bedrooms` / `total_rooms`
+- `population_per_household` = `population` / `households`
+
+---
+
+## 🛠️ Quickstart Guide
+
+### 1. Installation
+
+Clone the repository and install dependencies:
 ```bash
 git clone https://github.com/<your-username>/House-Price-Prediction.git
 cd House-Price-Prediction
 pip install -r requirements.txt
 ```
 
-## Usage
+### 2. Train Models & Tune Hyperparameters
 
-**1. Train the models** (downloads data, trains 6 models, saves the best one, generates charts):
+Execute the end-to-end pipeline to download data, clean features, run Optuna hyperparameter tuning, evaluate 7 candidate algorithms, export performance metrics, and generate chart artifacts:
 ```bash
 python src/train.py
 ```
 
-**2. Predict from Python:**
-```bash
-python src/predict.py
+### 3. Run Predictions in Python
+
+Generate price predictions programmatically:
+```python
+from src.predict import predict_price
+
+sample_house = {
+    "longitude": -118.25,
+    "latitude": 34.05,
+    "housing_median_age": 25,
+    "total_rooms": 3000,
+    "total_bedrooms": 600,
+    "population": 1400,
+    "households": 550,
+    "median_income": 5.5,
+    "ocean_proximity": "NEAR OCEAN"
+}
+
+price = predict_price(sample_house)
+print(f"Estimated Median House Value: ${price:,.2f}")
 ```
 
-**3. Launch the dashboard:**
+### 4. Launch Interactive Web App
+
+Run the Streamlit application locally:
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
-## Dataset
+---
 
-[California Housing](https://www.dcc.fc.up.pt/~ltorgo/Regression/cal_housing.html)
-(Pace & Barry, 1997) — median house values for California districts from the
-1990 census, with features like median income, house age, room/bedroom
-counts, population, households, coordinates, and ocean proximity.
+## 🧪 Unit Testing
 
-## Tech Stack
+Run the full pytest test suite to verify module behavior and system integrity:
+```bash
+python -m pytest tests/
+```
 
-Python · Pandas · NumPy · Scikit-Learn · XGBoost · Matplotlib · Seaborn ·
-Plotly · Streamlit · Joblib
+All 13 unit tests cover data loading, imputation, outlier capping, feature engineering, evaluation metrics, seed setting, model artifact persistence, and prediction inference.
 
-## Future Improvements
+---
 
-- Add LightGBM/CatBoost and hyperparameter search (GridSearch/Optuna)
-- SHAP-based explainability per prediction
-- Swap in the Kaggle "House Prices: Advanced Regression Techniques" dataset
-  for a second, higher-dimensional benchmark
-- Dockerize and deploy the Streamlit app
+## 🚀 Deployment Options
 
-## License
+- **Streamlit Community Cloud**: Connect your GitHub repository and set entry point to `app/streamlit_app.py`.
+- **Docker Container**:
+  ```dockerfile
+  FROM python:3.12-slim
+  WORKDIR /app
+  COPY . /app
+  RUN pip install --no-cache-dir -r requirements.txt
+  EXPOSE 8501
+  CMD ["streamlit", "run", "app/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+  ```
 
-MIT — see [LICENSE](LICENSE).
+---
+
+## 📄 License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
