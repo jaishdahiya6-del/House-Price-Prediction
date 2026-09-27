@@ -9,6 +9,7 @@ Outputs:
 import os
 import sys
 import warnings
+from typing import Tuple, Dict, Any, Sequence
 
 import matplotlib
 matplotlib.use("Agg")
@@ -46,11 +47,28 @@ for d in (MODELS_DIR, IMAGES_DIR, REPORTS_DIR):
 TARGET = "median_house_value"
 
 
-def tune_model_with_optuna(model_name: str, X_train: pd.DataFrame, y_train: pd.Series, n_trials: int = 3, random_state: int = 42):
-    """Tune hyperparameters for tree-based models using Optuna cross-validation."""
+def tune_model_with_optuna(
+    model_name: str,
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    n_trials: int = 3,
+    random_state: int = 42
+) -> Any:
+    """Tune hyperparameters for tree-based models using Optuna cross-validation.
+
+    Args:
+        model_name: Name of model algorithm ('XGBoost', 'LightGBM', 'RandomForest').
+        X_train: Scaled training features.
+        y_train: Training target series.
+        n_trials: Number of Optuna optimization trials.
+        random_state: Seed for cross-validation splits.
+
+    Returns:
+        Instantiated model with optimal hyperparameter settings.
+    """
     logger.info(f"Tuning {model_name} using Optuna ({n_trials} trials)...")
 
-    def objective(trial):
+    def objective(trial: optuna.Trial) -> float:
         kf = KFold(n_splits=3, shuffle=True, random_state=random_state)
 
         if model_name == "XGBoost":
@@ -86,7 +104,7 @@ def tune_model_with_optuna(model_name: str, X_train: pd.DataFrame, y_train: pd.S
             raise ValueError(f"Unsupported model for Optuna tuning: {model_name}")
 
         scores = cross_val_score(model, X_train, y_train, cv=kf, scoring="r2", n_jobs=1)
-        return scores.mean()
+        return float(scores.mean())
 
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=n_trials)
@@ -108,8 +126,24 @@ def tune_model_with_optuna(model_name: str, X_train: pd.DataFrame, y_train: pd.S
         return RandomForestRegressor(**best_params)
 
 
-def create_visualizations(df: pd.DataFrame, best_model, X_test_s, y_test, best_name: str, feature_names):
-    """Generate and save comprehensive EDA and model evaluation plots."""
+def create_visualizations(
+    df: pd.DataFrame,
+    best_model: Any,
+    X_test_s: pd.DataFrame,
+    y_test: pd.Series,
+    best_name: str,
+    feature_names: Sequence[str]
+) -> None:
+    """Generate and save comprehensive EDA and model evaluation plots.
+
+    Args:
+        df: Raw / engineered dataset for EDA plots.
+        best_model: Fitted best performing model object.
+        X_test_s: Scaled test feature DataFrame.
+        y_test: Test target Series.
+        best_name: Name string of best performing model.
+        feature_names: Names of feature columns.
+    """
     # 1. Correlation heatmap
     plt.figure(figsize=(11, 9))
     sns.heatmap(df.select_dtypes(include="number").corr(), annot=True, fmt=".2f",
@@ -181,7 +215,15 @@ def create_visualizations(df: pd.DataFrame, best_model, X_test_s, y_test, best_n
     plt.close()
 
 
-def main(enable_tuning: bool = True):
+def main(enable_tuning: bool = True) -> Tuple[pd.DataFrame, str]:
+    """Execute end-to-end model training, evaluation, and artifact serialization.
+
+    Args:
+        enable_tuning: Whether to run Optuna hyperparameter optimization.
+
+    Returns:
+        Tuple of (leaderboard_df, best_model_name).
+    """
     set_seed(42)
 
     df = load_data()
@@ -195,7 +237,7 @@ def main(enable_tuning: bool = True):
     X_train_s, X_test_s, scaler = scale_features(X_train, X_test)
 
     # Base candidate models
-    models = {
+    models: Dict[str, Any] = {
         "LinearRegression": LinearRegression(),
         "Ridge": Ridge(alpha=1.0),
         "Lasso": Lasso(alpha=0.01),
@@ -221,7 +263,7 @@ def main(enable_tuning: bool = True):
         metrics = compute_metrics(y_test, preds, X_train_s.shape[1])
         cv_scores = cross_val_score(model, X_train_s, y_train, cv=5, scoring="r2", n_jobs=1)
         metrics["Model"] = name
-        metrics["CV_R2_Mean"] = round(cv_scores.mean(), 4)
+        metrics["CV_R2_Mean"] = round(float(cv_scores.mean()), 4)
         results.append(metrics)
         fitted_models[name] = model
         logger.info(f"{name} -> RMSE={metrics['RMSE']}, R2={metrics['R2']}, CV_R2={metrics['CV_R2_Mean']}")
@@ -230,8 +272,7 @@ def main(enable_tuning: bool = True):
     leaderboard = leaderboard[["Model", "MAE", "MSE", "RMSE", "R2", "Adjusted_R2", "MAPE", "CV_R2_Mean"]]
     leaderboard.to_csv(os.path.join(REPORTS_DIR, "leaderboard.csv"), index=False)
 
-    print("\n=== MODEL LEADERBOARD ===")
-    print(leaderboard.to_string(index=False))
+    logger.info(f"\n=== MODEL LEADERBOARD ===\n{leaderboard.to_string(index=False)}")
 
     best_name = leaderboard.iloc[0]["Model"]
     best_model = fitted_models[best_name]
@@ -244,7 +285,7 @@ def main(enable_tuning: bool = True):
     save_object(best_name, os.path.join(MODELS_DIR, "best_model_name.pkl"))
 
     # Generate charts
-    create_visualizations(df, best_model, X_test_s, y_test, best_name, X_train.columns)
+    create_visualizations(df, best_model, X_test_s, y_test, best_name, list(X_train.columns))
 
     logger.info("Training pipeline complete. Artifacts saved to models/, reports/, images/.")
     return leaderboard, best_name
