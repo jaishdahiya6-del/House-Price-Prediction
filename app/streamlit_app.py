@@ -10,7 +10,7 @@ import streamlit as st
 import plotly.express as px
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
-from predict import predict_price  # noqa: E402
+from predict import predict_price, load_artifacts  # noqa: E402
 from utils import load_object  # noqa: E402
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
@@ -42,6 +42,14 @@ if os.path.exists(best_name_path):
 st.title("🏠 AI House Price Prediction System")
 st.caption(f"California Housing Dataset · Optimized Model: **{best_model_name}** · 20,640 Censused Records")
 
+# Check model availability
+models_ready = True
+try:
+    _ = load_artifacts()
+except Exception as err:
+    models_ready = False
+    st.warning(f"⚠️ Model artifacts not loaded: {err}. Predictions will be unavailable until `python src/train.py` is executed.")
+
 with st.sidebar:
     st.header("🔧 House Details")
     median_income = st.slider("Median Income (in $10,000s)", 0.5, 15.0, 5.0, 0.1)
@@ -56,7 +64,19 @@ with st.sidebar:
         "Ocean Proximity",
         ["<1H OCEAN", "INLAND", "NEAR OCEAN", "NEAR BAY", "ISLAND"],
     )
-    predict_clicked = st.button("💰 Predict Price", use_container_width=True)
+
+    # Input validation
+    input_errors = []
+    if total_bedrooms > total_rooms:
+        input_errors.append("Total Bedrooms cannot exceed Total Rooms.")
+    if households > population:
+        input_errors.append("Households cannot exceed Total Population.")
+
+    if input_errors:
+        for err in input_errors:
+            st.error(f"❌ {err}")
+
+    predict_clicked = st.button("💰 Predict Price", use_container_width=True, disabled=not models_ready or len(input_errors) > 0)
 
 if "history" not in st.session_state:
     st.session_state.history = []
@@ -77,11 +97,11 @@ with col2:
     if predict_clicked:
         try:
             record = {
-                "longitude": longitude, "latitude": latitude,
-                "housing_median_age": housing_median_age, "total_rooms": total_rooms,
-                "total_bedrooms": total_bedrooms, "population": population,
-                "households": households, "median_income": median_income,
-                "ocean_proximity": ocean_proximity,
+                "longitude": float(longitude), "latitude": float(latitude),
+                "housing_median_age": float(housing_median_age), "total_rooms": float(total_rooms),
+                "total_bedrooms": float(total_bedrooms), "population": float(population),
+                "households": float(households), "median_income": float(median_income),
+                "ocean_proximity": str(ocean_proximity),
             }
             price = predict_price(record)
 

@@ -18,6 +18,17 @@ def test_add_derived_features():
     assert list(engineered["rooms_per_household"]) == [2.0, 2.0]
 
 
+def test_add_derived_features_zero_households():
+    df = pd.DataFrame({
+        "total_rooms": [100],
+        "total_bedrooms": [20],
+        "population": [300],
+        "households": [0]
+    })
+    engineered = add_derived_features(df)
+    assert engineered["rooms_per_household"].iloc[0] == 100.0
+
+
 def test_encode_categorical():
     df = pd.DataFrame({
         "ocean_proximity": ["<1H OCEAN", "INLAND", "NEAR OCEAN"]

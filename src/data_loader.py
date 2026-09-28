@@ -24,6 +24,9 @@ def load_data(save_raw: bool = True) -> pd.DataFrame:
     Downloads from a GitHub-hosted CSV mirror on first run and caches
     locally at data/raw/housing.csv for subsequent runs.
 
+    Args:
+        save_raw: Whether to cache raw CSV locally if downloaded.
+
     Returns:
         DataFrame with 9 numeric/categorical features + target column
         'median_house_value'.
@@ -46,5 +49,5 @@ def load_data(save_raw: bool = True) -> pd.DataFrame:
 
 if __name__ == "__main__":
     data = load_data()
-    print(data.head())
-    print(data.describe())
+    logger.info(f"Dataset head:\n{data.head()}")
+    logger.info(f"Dataset summary:\n{data.describe()}")

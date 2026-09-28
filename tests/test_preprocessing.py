@@ -14,12 +14,24 @@ def test_handle_missing_values():
     assert cleaned_df["num1"].iloc[2] == 3.0  # median of [1,2,4,5] is 3.0
 
 
+def test_handle_missing_values_no_missing():
+    df = pd.DataFrame({"num1": [1.0, 2.0, 3.0]})
+    cleaned_df = handle_missing_values(df)
+    assert cleaned_df.equals(df)
+
+
 def test_cap_outliers_iqr():
     df = pd.DataFrame({
         "val": [10, 12, 11, 13, 12, 11, 10, 1000]  # 1000 is an outlier
     })
     capped_df = cap_outliers_iqr(df, columns=["val"], factor=1.5)
     assert capped_df["val"].max() < 1000
+
+
+def test_cap_outliers_iqr_missing_col():
+    df = pd.DataFrame({"val": [10, 12, 11]})
+    capped_df = cap_outliers_iqr(df, columns=["non_existent"], factor=1.5)
+    assert capped_df.equals(df)
 
 
 def test_split_data():
